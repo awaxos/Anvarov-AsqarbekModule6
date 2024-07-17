@@ -1,0 +1,296 @@
+# views.py
+from django.shortcuts import get_object_or_404, redirect
+from .models import YourModel
+
+def delete_view(request, pk):
+    instance = get_object_or_404(YourModel, pk=pk)
+    if request.method == 'POST':
+        instance.delete()
+        return redirect('success_url_name')  # Replace with your success URL
+    Optionally, render a confirmation page using a template and POST form
+    return render(request, 'yourapp/confirm_delete.html', {'instance': instance})
+
+# urls.py
+ from django.urls import path
+ from . import views
+
+ urlpatterns = [
+     path('yourmodel/<int:pk>/delete/', views.delete_view, name='delete_view_name'),
+ ]
+
+<!-- your_template.html -->
+
+<form action="{% url 'delete_view_name' pk=instance.pk %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Delete">
+</form>
+
+###########################################################################################
+
+# views.py
+
+from django.shortcuts import get_object_or_404, redirect, render
+from .forms import YourModelForm
+from .models import YourModel
+
+def update_view(request, pk):
+    instance = get_object_or_404(YourModel, pk=pk)
+    form = YourModelForm(request.POST or None, instance=instance)
+    if form.is_valid():
+        form.save()
+        return redirect('success_url_name')  # Replace with your success URL
+    return render(request, 'yourapp/update_form.html', {'form': form})
+
+    # urls.py
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('yourmodel/<int:pk>/update/', views.update_view, name='update_view_name'),
+]
+
+<!-- your_template.html -->
+
+<a href="{% url 'update_view_name' pk=instance.pk %}">Update</a>
+
+
+
+################################################################################################
+# registration/forms.py
+
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+
+class RegistrationForm(UserCreationForm):
+    email = forms.EmailField()
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+
+# registration/views.py
+
+from django.shortcuts import render, redirect
+from .forms import RegistrationForm
+
+def register_page(request):
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('registration_success')  # Redirect to success page
+    else:
+        form = RegistrationForm()
+
+    return render(request, 'registration/register_page.html', {'form': form})
+
+# registration/urls.py
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('register/', views.register_page, name='register_page'),
+    # Add other URLs as needed
+]
+
+
+
+# yourprojectname/urls.py
+
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('accounts/', include('registration.urls')),  # Adjust as per your project structure
+    # Add other app URLs here
+]
+
+
+<!-- registration/templates/registration/register_page.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="jumbotron">
+        <h1 class="display-4">Register</h1>
+        <hr class="my-4">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
+
+
+<!-- registration/templates/registration/registration_success.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Registration Success</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="jumbotron">
+        <h1 class="display-4">Registration Successful</h1>
+        <p class="lead">You have successfully registered.</p>
+        <hr class="my-4">
+        <a class="btn btn-primary btn-lg" href="/" role="button">Go to Home</a>
+    </div>
+</div>
+
+</body>
+</html>
+
+
+
+#########################################################################################################
+# authentication/forms.py
+
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm
+
+class LoginForm(AuthenticationForm):
+    username = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Username'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'}))
+
+
+
+# authentication/views.py
+
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from .forms import LoginForm
+
+def login_page(request):
+    if request.method == 'POST':
+        form = LoginForm(request=request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('profile')  # Redirect to profile or dashboard page
+    else:
+        form = LoginForm()
+
+    return render(request, 'authentication/login_page.html', {'form': form})
+
+
+
+# authentication/urls.py
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('login/', views.login_page, name='login_page'),
+    # Add other URLs as needed
+]
+
+
+
+# yourprojectname/urls.py
+
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('accounts/', include('authentication.urls')),  # Adjust as per your project structure
+    # Add other app URLs here
+]
+
+
+
+<!-- authentication/templates/authentication/login_page.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .login-form {
+            width: 340px;
+            margin: 50px auto;
+        }
+        .login-form form {
+            margin-bottom: 15px;
+            background: #f7f7f7;
+            box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+        .login-form h2 {
+            margin: 0 0 15px;
+        }
+        .form-control, .btn {
+            min-height: 38px;
+            border-radius: 2px;
+        }
+        .btn {
+            font-size: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-form">
+    <form action="{% url 'login_page' %}" method="post">
+        {% csrf_token %}
+        <h2 class="text-center">Log in</h2>
+        {{ form.username }}
+        {{ form.password }}
+        <button type="submit" class="btn btn-primary btn-block">Log in</button>
+    </form>
+</div>
+
+</body>
+</html>
+
+
+
+<!-- authentication/templates/authentication/profile.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="jumbotron">
+        <h1 class="display-4">Welcome to Your Profile</h1>
+        <p class="lead">You are logged in.</p>
+        <hr class="my-4">
+        <!-- Add content as needed -->
+    </div>
+</div>
+
+</body>
+</html>
